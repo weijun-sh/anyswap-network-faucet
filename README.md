@@ -1,2 +1,2 @@
-# fsn-faucet
-fusion testnet faucet
+# anyswap-network-faucet
+anyswap network testnet faucet
