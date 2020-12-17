@@ -49,8 +49,8 @@ import (
 
 const (
 	chainID   = 202011
-	webPort   = 20202
-	rpcPort   = 8701
+	webPort   = 8880
+	rpcPort   = 12342
 	rpcServer = "127.0.0.1"
 )
 
@@ -169,7 +169,7 @@ func apiHandler(conn *websocket.Conn) {
 			continue
 		}
 		switch msg.Cointype {
-		case "FSN":
+		case "CCD":
 			log.Debug("faucet", "Address", msg.Address, "cointype", msg.Cointype)
 			clientc, err := rpc.Dial(rpcserver)
 			if err != nil {

@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Fusion Testnet Faucet</title>
+		<title>CCDEX Testnet Faucet</title>
 		<!--<link rel="icon" href="./favicon.ico" type="image/x-icon">-->
 
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
@@ -42,7 +42,7 @@
 			<div class="container">
 				<div class="row" style="margin-bottom: 16px;">
 					<div class="col-lg-12">
-						<h1 style="text-align: center;"><i class="fa fa-bath" aria-hidden="true"></i>  Fusion Testnet Faucet</h1>
+						<h1 style="text-align: center;"><i class="fa fa-bath" aria-hidden="true"></i>  CCDEX Testnet Faucet</h1>
 					</div>
 				</div>
 				<div class="row">
@@ -50,7 +50,7 @@
 						<div class="input-group">
 							<input id="address" name="address" type="text" class="form-control" placeholder="Please enter your account.">
 							<span class="input-group-btn">
-								<button id="selectCT" class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">FSN</button>
+								<button id="selectCT" class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">CCD</button>
 							</span>
 						</div><!--{{if .Recaptcha}}-->
 					</div>
@@ -101,7 +101,7 @@
 			var reconnect = function() {
 				console.log("connect ..")
 				//var faucetServerURL = "127.0.0.1:20202/faucet"
-				var faucetServerURL = "test.ccdex.top"///faucet"
+				var faucetServerURL = "test.ccdex.top/faucet"
 				server = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + faucetServerURL);
 				console.log("connected")
 				console.log("readyState: "+server.readyState)
