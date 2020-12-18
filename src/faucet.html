@@ -124,7 +124,7 @@
 						document.getElementById("txtips").style.opacity="1"
 						//var addrURL = "https://dcrm.network/explorer/#/blockIndex/accountDtil?params="+document.getElementById('address').value
 						//document.getElementById("txtips").innerHTML = msg.msg+'<br/>\n'+"Please visit the address for enquiry as follows:"+'<br/>\n'+'<a href="'+addrURL+'">'+addrURL+'</a>'
-						var txURL = "https://blocks.fusionnetwork.io/#!/transaction/" + msg.txhash
+						var txURL = "https://ccdex.top/explorer/#/blockIndex/txnsDtil?params=" + msg.txhash
 						document.getElementById("txtips").innerHTML = msg.msg+'<br/>\n'+"Please visit the transaction as follows:"+'<br/>\n'+'<a href="'+txURL+'">'+txURL+'</a>'
 						console.log("mes: "+msg.msg+", transaction hash: "+msg.txhash)
 					}

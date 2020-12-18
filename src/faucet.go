@@ -52,6 +52,7 @@ const (
 	webPort   = 8880
 	rpcPort   = 12342
 	rpcServer = "127.0.0.1"
+	gateWay   = "https://rpc.smpc.network"
 )
 
 var (
@@ -134,7 +135,8 @@ func apiHandler(conn *websocket.Conn) {
 		conn.Close()
 	}()
 
-	rpcserver := fmt.Sprintf("http://%v:%v", *rpcServerFlag, *rpcPortFlag)
+	//rpcserver := fmt.Sprintf("http://%v:%v", *rpcServerFlag, *rpcPortFlag)
+	rpcserver := "https://rpc.smpc.network"
 	log.Info("apiHandler", "rpcserver", rpcserver)
 
 	for {
@@ -173,14 +175,14 @@ func apiHandler(conn *websocket.Conn) {
 			log.Debug("faucet", "Address", msg.Address, "cointype", msg.Cointype)
 			clientc, err := rpc.Dial(rpcserver)
 			if err != nil {
-				log.Debug("client connection error:\n")
+				log.Debug("client connection error", "rpc err", err)
 				continue
 			}
 			err = clientc.CallContext(context.Background(), &result, "eth_getTransactionCount", account.Address.String(), "pending")
 			nonce = uint64(result)
 			log.Debug("faucet", "nonce", nonce)
-			gasLimit := uint64(90000)
-			gasPrice := big.NewInt(1000000000) //1gwei
+			gasLimit := uint64(100000)
+			gasPrice := big.NewInt(10000000000) //10 gwei
 			tx := types.NewTransaction(nonce, common.HexToAddress(msg.Address), coinNum, gasLimit, gasPrice, nil)
 			signed, err := ks.SignTx(account, tx, big.NewInt(chainID))
 			if err != nil {
@@ -195,7 +197,7 @@ func apiHandler(conn *websocket.Conn) {
 			log.Debug("Faucet", "addr", msg.Address, "coinNum", coinNum)
 			client, err := ethclient.Dial(rpcserver)
 			if err != nil {
-				log.Debug("client connection error.\n")
+				log.Debug("client connection error.", "ethclient err", err)
 				continue
 			}
 			// Send RawTransaction to ethereum network
