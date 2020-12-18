@@ -181,20 +181,12 @@ func apiHandler(conn *websocket.Conn) {
 			Address  string `json:"address"`
 			Cointype string `json:"cointype"`
 		}
-		_ = websocket.JSON.Receive(conn, &msg)
-		log.Debug("faucet", "JSON.Receive", msg)
-		if len(msg.Address) == 0 {
-			log.Debug("faucet, address is null\n")
-			send(conn, map[string]string{"state": "ERR", "msg": "Account is nil"}, time.Second)
-			if errs := send(conn, map[string]interface{}{
-				"state":  "ERROR",
-				"funded": nonce,
-			}, time.Second); errs != nil {
-				log.Warn("Failed to send stats to client", "err", errs)
-				conn.Close()
-				break
-			}
-			continue
+		err := websocket.JSON.Receive(conn, &msg)
+		log.Debug("faucet", "Receive", msg)
+		if err != nil {
+			log.Debug("faucet", "receive err", err)
+			conn.Close()
+			break
 		}
 		if !common.IsHexAddress(msg.Address) {
 			log.Debug("faucet", "invalid address", msg.Address)
