@@ -50,13 +50,13 @@
 						<div class="input-group">
 							<input id="address" name="address" type="text" class="form-control" placeholder="Please enter your account.">
 							<span class="input-group-btn">
-								<button id="selectCT" class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">CCD</button>
+								<button id="selectCT" class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border:1px solid #00E5EE">20 CCD</button>
 							</span>
 						</div><!--{{if .Recaptcha}}-->
 					</div>
 				</div>
 				<div class="row">
-					<center><button class="btn btn-default dropdown-toggle" type="button" id="confirm" style="background-color: #46a3ff; width: 140px; margin-top: 20px;" onclick="submit(0)"> Give me CCD </button></center>
+					<center><button class="btn btn-default dropdown-toggle" type="button" id="confirm" style="background-color: #00E5EE; width: 140px; margin-top: 20px;" onclick="submit(0)"> Give me CCD </button></center>
 				</div>
 				<center>
 					<div id="txtips" style="height: 50px; margin-top: 10px;">
@@ -90,7 +90,7 @@
 			var submit = function(){
 				var coinType = document.getElementById("selectCT").innerHTML
 				console.log(document.getElementById("address").value, coinType)
-				server.send(JSON.stringify({address:document.getElementById("address").value, cointype: coinType}))
+				server.send(JSON.stringify({address:document.getElementById("address").value, cointype: "CCD"}))
 				console.log("submit, send")
 			}
 			var hidetips = function(){
@@ -100,7 +100,6 @@
 			// Define a method to reconnect upon server loss
 			var reconnect = function() {
 				console.log("connect ..")
-				//var faucetServerURL = "127.0.0.1:20202/faucet"
 				var faucetServerURL = "test.ccdex.top/faucet"
 				server = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + faucetServerURL);
 				console.log("connected")
@@ -117,7 +116,7 @@
 						document.getElementById("txtips").style.opacity="1"
 						document.getElementById("txtips").innerHTML = msg.msg
 						console.log("mes: "+msg.msg)
-						setTimeout(hidetips, 3000);
+						setTimeout(reconnect, 300000);
 					}
 					if (msg.state == "OK") {
 						document.getElementById("txtips").style.color="blue"

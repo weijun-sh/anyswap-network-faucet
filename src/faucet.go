@@ -34,6 +34,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/FusionFoundation/efsn/accounts"
@@ -44,6 +45,8 @@ import (
 	"github.com/FusionFoundation/efsn/ethclient"
 	"github.com/FusionFoundation/efsn/log"
 	"github.com/FusionFoundation/efsn/rpc"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 	"golang.org/x/net/websocket"
 )
 
@@ -71,8 +74,35 @@ var (
 	ks      *keystore.KeyStore
 	account accounts.Account
 
+	faucetDbPath    = "~/.faucet/faucet.db"
+	refreshInterval = 5 * time.Minute
+	quotaNumber     = uint64(1000)
+	faucetdb        *faucet
+	refresh         = time.NewTicker(refreshInterval)
+	refreshDone     = make(chan struct{})
+	dbTime          = ""
+
 	coinNum = new(big.Int).Mul(big.NewInt(20), big.NewInt(1000000000000000000))
 )
+
+type faucet struct {
+	mutex sync.Mutex // protects db
+	db    *leveldb.DB
+	size  uint64
+}
+
+func init() {
+	db, err := leveldb.OpenFile(faucetDbPath, nil)
+	if _, corrupted := err.(*errors.ErrCorrupted); corrupted {
+		db, err = leveldb.RecoverFile(faucetDbPath, nil)
+	}
+	// (Re)check for errors and abort if opening of the db failed
+	if err != nil {
+		fmt.Printf("Open file %+v failed.\n", faucetDbPath)
+		return
+	}
+	faucetdb = &faucet{db: db, size: 0}
+}
 
 func main() {
 	// Parse the flags and set up the logger to print everything requested
@@ -113,6 +143,7 @@ func main() {
 // listenAndServe registers the HTTP handlers for the faucet and boots it up
 // for service user funding requests.
 func listenAndServe(port int) error {
+	go loopFreshDB()
 	http.HandleFunc("/", webHandler)
 	http.Handle("/faucet", websocket.Handler(apiHandler))
 	log.Info("listenAndServe", "port", port)
@@ -170,6 +201,17 @@ func apiHandler(conn *websocket.Conn) {
 			send(conn, map[string]string{"state": "ERR", "msg": "Account is invalid"}, time.Second)
 			continue
 		}
+		if faucetdb.size >= quotaNumber {
+			log.Debug("faucet", "request coin quota is full.", "")
+			send(conn, map[string]string{"state": "ERR", "msg": "Coin(CCD) request quota is nil, please try again tomorrow."}, time.Second)
+			continue
+		}
+		ret := keyIsExist([]byte(msg.Address))
+		if ret == true {
+			log.Debug("faucet", "account", msg.Address, "was had requested.", "")
+			send(conn, map[string]string{"state": "ERR", "msg": "The account was had requested coin(CCD)."}, time.Second)
+			continue
+		}
 		switch msg.Cointype {
 		case "CCD":
 			log.Debug("faucet", "Address", msg.Address, "cointype", msg.Cointype)
@@ -209,6 +251,9 @@ func apiHandler(conn *websocket.Conn) {
 				txHash := signed.Hash().String()
 				send(conn, map[string]string{"state": "OK", "msg": "Send Transaction Successed.\nIt takes about 1~2 blocks (time) to get to the account.", "txhash": txHash}, time.Second)
 				log.Info("faucet", "client send", "success", "txhash", txHash)
+				if putKeyToDb([]byte(msg.Address)) != nil {
+					log.Debug("PutKeyToDb account: %+v failed.\n", msg.Address)
+				}
 			}
 		default:
 			log.Warn("faucet", "unkown cointype", msg.Cointype)
@@ -225,4 +270,73 @@ func send(conn *websocket.Conn, value interface{}, timeout time.Duration) error 
 	}
 	conn.SetWriteDeadline(time.Now().Add(timeout))
 	return websocket.JSON.Send(conn, value)
+}
+
+func loopFreshDB() {
+	log.Debug("==== loop() ====\n")
+	refreshDone = nil
+	dbTime = getDbDate()
+
+	for {
+		select {
+		case <-refresh.C:
+			refreshDb()
+		case <-refreshDone:
+			faucetdb.db.Close()
+			break
+		}
+	}
+}
+
+func refreshDb() {
+	if dbTime == "" {
+		return
+	}
+	at := fmt.Sprintf("%+v", time.Now())
+	n := strings.Split(at, " ")
+	if dbTime != string(n[0]) {
+		dbTime = string(n[0])
+		emptyDb()
+	}
+}
+
+func emptyDb() {
+	log.Debug("==== emptyDb() ====\n")
+	iter := faucetdb.db.NewIterator(nil, nil)
+	defer iter.Release()
+	for iter.Next() {
+		faucetdb.db.Delete(iter.Key(), nil)
+	}
+	faucetdb.size = 0
+}
+
+func getDbDate() string {
+	log.Debug("==== getDbDate() ====\n")
+	iter := faucetdb.db.NewIterator(nil, nil)
+	defer iter.Release()
+	for iter.Next() {
+		d := strings.Split(string(iter.Value()), " ")
+		return string(d[0])
+	}
+	return ""
+}
+
+func keyIsExist(key []byte) bool {
+	_, err := faucetdb.db.Get(key, nil)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func putKeyToDb(key []byte) error {
+	at := fmt.Sprintf("%+v", time.Now())
+	err := faucetdb.db.Put(key, []byte(at), nil)
+	if err != nil {
+		log.Debug("putKeyToDb", "put, key", key, "faied", "")
+		return err
+	}
+	faucetdb.size += 1
+	log.Debug("putKeyToDb", "size", faucetdb.size, "quotaNumber", quotaNumber, "remain", quotaNumber-faucetdb.size)
+	return nil
 }
