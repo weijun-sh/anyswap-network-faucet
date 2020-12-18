@@ -97,6 +97,9 @@
 				document.getElementById("txtips").style.color="black"
 				document.getElementById("txtips").style.opacity="0"
 			}
+			var emptyAddress = function(){
+				document.getElementById("address").value = ""
+			}
 			// Define a method to reconnect upon server loss
 			var reconnect = function() {
 				console.log("connect ..")
@@ -116,14 +119,16 @@
 						document.getElementById("txtips").style.opacity="1"
 						document.getElementById("txtips").innerHTML = msg.msg
 						console.log("msg: "+msg.msg)
-						setTimeout(hidetips, 300000);
+						setTimeout(hidetips, 5000);
 					}
 					if (msg.state == "OK") {
+						emptyAddress()
 						document.getElementById("txtips").style.color="blue"
 						document.getElementById("txtips").style.opacity="1"
 						var txURL = "https://ccdex.top/explorer/#/blockIndex/txnsDtil?params=" + msg.txhash
 						document.getElementById("txtips").innerHTML = msg.msg+'<br/>\n'+"Please visit the transaction as follows:"+'<br/>\n'+'<a href="'+txURL+'">'+txURL+'</a>'
 						console.log("msg: "+msg.msg+", transaction hash: "+msg.txhash)
+						setTimeout(hidetips, 60000);
 					}
 				}
 				server.onclose = function(event) {
